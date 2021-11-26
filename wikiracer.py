@@ -81,8 +81,6 @@ async def fetch_right(node, session):
         }
         async with session.get(api_url, params=PARAMS) as response:
             resp = await response.json()
-            print(resp)
-            exit()
             num = list(resp["query"]["pages"].keys())[0]
             
             async def keep_going(r):
