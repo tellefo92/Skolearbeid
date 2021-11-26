@@ -2,6 +2,7 @@ import asyncio
 import re
 from aiohttp import ClientSession
 import time
+import requests
 
 class Node:
     def __init__(self, url, parent=None):
@@ -10,7 +11,6 @@ class Node:
 
 def url_to_api(url):
     title = url.split("/wiki/")[1]
-    print(title)
     return title
 
 def print_path(node, connecting_node=None, side="left"):
@@ -36,6 +36,7 @@ def print_path(node, connecting_node=None, side="left"):
         _left.reverse()
     print(f"Path found in {time.perf_counter()-start:.5f} seconds:")
     path = _left + _right
+    print(f"Path has {len(path)-1} degrees of separation")
     print(f"{path[0]} -->")
     for i in range(1, len(path)-1):
         print(f"{path[i]} -->")
@@ -147,9 +148,30 @@ def main():
         loop.run_until_complete(future)
         print(f"{len(previously_checked)} articles checked. {len(left_nodes)} nodes in left graph, {len(right_nodes)} nodes in right graph.")
 
+def get_random():
+    url = "https://en.wikipedia.org/w/api.php?action=query&format=json&list=random&rnlimit=2&rnnamespace=0"
+    r = requests.get(url).json()
+    links = [base_url + a["title"].replace(" ", "_") for a in r["query"]["random"]]
+    return links
+
 if __name__ == "__main__":
-    start_url = input("Start url: ")
-    end_url = input("End url: ")
+    print("Run")
+    print("(1) Random links, or")
+    print("(2) Supply your own?")
+    ans = input("Choose 1 or 2: ")
+    base_url = "https://en.wikipedia.org/wiki/"
+    if ans == "1":
+        start_url, end_url = get_random()
+        print(f"Start article: {start_url} \nEnd article: {end_url}")
+    elif ans == "2":
+        start_url = input("Start article: ")
+        if not start_url.startswith(base_url):
+            start_url = base_url + start_url.replace(" ", "_")
+        end_url = input("End article: ")
+        if not end_url.startswith(base_url):
+            end_url = base_url + end_url.replace(" ", "_")
+    else:
+        raise ValueError ("Invalid input")
     left_layer = [start_url]
     right_layer = [end_url]
     left_nodes = [Node(start_url)]
