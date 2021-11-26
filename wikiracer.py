@@ -34,10 +34,8 @@ def print_path(node, connecting_node=None, side="left"):
             _left.append(connecting_node.parent.url)
             connecting_node = connecting_node.parent
         _left.reverse()
-    print(_left, _right)
     print(f"Path found in {time.perf_counter()-start:.5f} seconds:")
     path = _left + _right
-    print(f"Path has {len(path)-1} degrees of separation.")
     print(f"{path[0]} -->")
     for i in range(1, len(path)-1):
         print(f"{path[i]} -->")
@@ -56,7 +54,6 @@ async def fetch_left(node, session):
                 art.parent = node
                 for _node in right_nodes:
                     if _node.url == common[0]:
-                        print("Left side: ", art.url, _node.url)
                         print_path(art, connecting_node=_node)
             else:
                 for article in list(articles):
@@ -113,7 +110,6 @@ async def fetch_right(node, session):
                 art.parent = node
                 for _node in left_nodes:
                     if _node.url == common[0]:
-                        print("Right side: ", art.url, _node.url)
                         print_path(art, connecting_node=_node, side="right")
             else:
                 for article in list(articles):
