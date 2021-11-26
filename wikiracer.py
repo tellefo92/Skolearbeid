@@ -10,6 +10,7 @@ class Node:
 
 def url_to_api(url):
     title = url.split("/wiki/")[1]
+    print(title)
     return title
 
 def print_path(node, connecting_node=None, side="left"):
@@ -33,8 +34,14 @@ def print_path(node, connecting_node=None, side="left"):
             _left.append(connecting_node.parent.url)
             connecting_node = connecting_node.parent
         _left.reverse()
+    print(_left, _right)
     print(f"Path found in {time.perf_counter()-start:.5f} seconds:")
-    print(_left + _right)
+    path = _left + _right
+    print(f"Path has {len(path)-1} degrees of separation.")
+    print(f"{path[0]} -->")
+    for i in range(1, len(path)-1):
+        print(f"{path[i]} -->")
+    print(path[-1])
     exit()
         
 
@@ -49,6 +56,7 @@ async def fetch_left(node, session):
                 art.parent = node
                 for _node in right_nodes:
                     if _node.url == common[0]:
+                        print("Left side: ", art.url, _node.url)
                         print_path(art, connecting_node=_node)
             else:
                 for article in list(articles):
@@ -73,6 +81,8 @@ async def fetch_right(node, session):
         }
         async with session.get(api_url, params=PARAMS) as response:
             resp = await response.json()
+            print(resp)
+            exit()
             num = list(resp["query"]["pages"].keys())[0]
             
             async def keep_going(r):
@@ -97,7 +107,7 @@ async def fetch_right(node, session):
                 articles = set(["https://en.wikipedia.org/wiki/" + d["title"].replace(" ", "_") for d in resp["query"]["pages"][num]["linkshere"]])
             except KeyError:
                 if len(right_layer) == 1:
-                    raise NoArticlesFound ("No articles are linking to that article")
+                    print("No articles linking to end url")
                 return
             common = list(articles.intersection(left_layer))
             if common:
@@ -105,6 +115,7 @@ async def fetch_right(node, session):
                 art.parent = node
                 for _node in left_nodes:
                     if _node.url == common[0]:
+                        print("Right side: ", art.url, _node.url)
                         print_path(art, connecting_node=_node, side="right")
             else:
                 for article in list(articles):
@@ -132,15 +143,7 @@ async def run(nodes, linkshere=False):
         responses = asyncio.gather(*tasks)
         await responses
 
-if __name__ == "__main__":
-    start_url = "https://en.wikipedia.org/wiki/Nobel_Prize"
-    end_url = "https://en.wikipedia.org/wiki/Array_data_structure"
-    left_layer = [start_url]
-    right_layer = [end_url]
-    left_nodes = [Node(start_url)]
-    right_nodes = [Node(end_url)]
-    previously_checked = []
-    start = time.perf_counter()
+def main():
     while True:
         loop = asyncio.get_event_loop()
         if len(left_nodes) <= len(right_nodes):
@@ -149,3 +152,15 @@ if __name__ == "__main__":
             future = asyncio.ensure_future(run(right_nodes, linkshere=True))
         loop.run_until_complete(future)
         print(f"{len(previously_checked)} articles checked. {len(left_nodes)} nodes in left graph, {len(right_nodes)} nodes in right graph.")
+
+if __name__ == "__main__":
+    start_url = input("Start url: ")
+    end_url = input("End url: ")
+    left_layer = [start_url]
+    right_layer = [end_url]
+    left_nodes = [Node(start_url)]
+    right_nodes = [Node(end_url)]
+    previously_checked = []
+    start = time.perf_counter()
+    main()
+    
